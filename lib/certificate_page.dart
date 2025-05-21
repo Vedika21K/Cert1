@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:html' as html;
 
-enum CertificateType { achievement, completion, attendance }
+enum CertificateType { achievement, completion, participation }
 
 class CertificatePage extends StatefulWidget {
   const CertificatePage({super.key});
@@ -18,7 +19,6 @@ class _CertificatePageState extends State<CertificatePage> {
 
   CertificateType _selectedType = CertificateType.achievement;
 
-  // Example event details for each template
   final Map<CertificateType, Map<String, String>> _eventDetails = {
     CertificateType.achievement: {
       'event': 'National Coding Olympiad',
@@ -28,7 +28,7 @@ class _CertificatePageState extends State<CertificatePage> {
       'event': 'Flutter Bootcamp',
       'date': 'June 1, 2025',
     },
-    CertificateType.attendance: {
+    CertificateType.participation: {
       'event': 'AI Seminar',
       'date': 'April 15, 2025',
     },
@@ -37,16 +37,39 @@ class _CertificatePageState extends State<CertificatePage> {
   String get _templateAsset {
     switch (_selectedType) {
       case CertificateType.achievement:
-        return 'assets/achievement.png';
+        return 'assets/a.png';
       case CertificateType.completion:
-        return 'assets/complete.png';
-      case CertificateType.attendance:
-        return 'assets/part.png';
+        return 'assets/c.png';
+      case CertificateType.participation:
+        return 'assets/p.png';
     }
   }
 
   String get _eventName => _eventDetails[_selectedType]!['event']!;
   String get _eventDate => _eventDetails[_selectedType]!['date']!;
+
+  TextStyle _getFontStyle(double size, {FontWeight? weight}) {
+    switch (_selectedType) {
+      case CertificateType.participation:
+        return GoogleFonts.poppins(
+          fontSize: size,
+          color: Colors.red.shade900,
+          fontWeight: weight,
+        );
+      case CertificateType.completion:
+        return GoogleFonts.inriaSerif(
+          fontSize: size,
+          color: Colors.red.shade900,
+          fontWeight: weight,
+        );
+      case CertificateType.achievement:
+        return GoogleFonts.quicksand(
+          fontSize: size,
+          color: Colors.red.shade900,
+          fontWeight: weight,
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +80,6 @@ class _CertificatePageState extends State<CertificatePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Dropdown to select template
               DropdownButton<CertificateType>(
                 value: _selectedType,
                 items:
@@ -76,7 +98,6 @@ class _CertificatePageState extends State<CertificatePage> {
                 },
               ),
               const SizedBox(height: 16),
-              // Name input
               SizedBox(
                 width: 300,
                 child: TextField(
@@ -89,7 +110,6 @@ class _CertificatePageState extends State<CertificatePage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Certificate preview with overlay
               Screenshot(
                 controller: _screenshotController,
                 child: Stack(
@@ -98,7 +118,7 @@ class _CertificatePageState extends State<CertificatePage> {
                     Image.asset(_templateAsset, width: 600),
                     // Name
                     Positioned(
-                      top: 250, // Adjust for your template
+                      top: 179,
                       left: 0,
                       right: 0,
                       child: Center(
@@ -106,40 +126,34 @@ class _CertificatePageState extends State<CertificatePage> {
                           _nameController.text.isEmpty
                               ? "Your Name"
                               : _nameController.text,
-                          style: TextStyle(
-                            fontSize: 36,
-                            color: Colors.red.shade900,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: _getFontStyle(30, weight: FontWeight.bold),
                         ),
                       ),
                     ),
                     // Event Name
                     Positioned(
-                      top: 320, // Adjust for your template
+                      top: 245,
                       left: 0,
                       right: 0,
                       child: Center(
                         child: Text(
                           _eventName,
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.red.shade700,
+                          style: _getFontStyle(20).copyWith(
+                            color: const Color.fromARGB(255, 118, 11, 11),
                           ),
                         ),
                       ),
                     ),
                     // Date
                     Positioned(
-                      top: 370, // Adjust for your template
+                      top: 290,
                       left: 0,
                       right: 0,
                       child: Center(
                         child: Text(
                           _eventDate,
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.red.shade700,
+                          style: _getFontStyle(15).copyWith(
+                            color: const Color.fromARGB(255, 121, 13, 13),
                           ),
                         ),
                       ),
