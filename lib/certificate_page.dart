@@ -16,23 +16,24 @@ class CertificatePage extends StatefulWidget {
 class _CertificatePageState extends State<CertificatePage> {
   final ScreenshotController _screenshotController = ScreenshotController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _eventNameController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
 
   CertificateType _selectedType = CertificateType.achievement;
+  DateTime? _selectedDateTime;
 
-  final Map<CertificateType, Map<String, String>> _eventDetails = {
-    CertificateType.achievement: {
-      'event': 'National Coding Olympiad',
-      'date': 'May 25, 2025',
-    },
-    CertificateType.completion: {
-      'event': 'Flutter Bootcamp',
-      'date': 'June 1, 2025',
-    },
-    CertificateType.participation: {
-      'event': 'AI Seminar',
-      'date': 'April 15, 2025',
-    },
-  };
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _updateEventDetailsForSelectedType(CertificateType type) {
+    setState(() {
+      _eventNameController.clear();
+      _dateController.clear();
+      _selectedDateTime = null;
+    });
+  }
 
   String get _templateAsset {
     switch (_selectedType) {
@@ -44,9 +45,6 @@ class _CertificatePageState extends State<CertificatePage> {
         return 'assets/p.png';
     }
   }
-
-  String get _eventName => _eventDetails[_selectedType]!['event']!;
-  String get _eventDate => _eventDetails[_selectedType]!['date']!;
 
   TextStyle _getFontStyle(double size, {FontWeight? weight}) {
     switch (_selectedType) {
@@ -71,12 +69,29 @@ class _CertificatePageState extends State<CertificatePage> {
     }
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDateTime ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDateTime = picked;
+        _dateController.text =
+            "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Download Certificate")),
       body: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -92,9 +107,12 @@ class _CertificatePageState extends State<CertificatePage> {
                       );
                     }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedType = value!;
-                  });
+                  if (value != null) {
+                    setState(() {
+                      _selectedType = value;
+                      _updateEventDetailsForSelectedType(value);
+                    });
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -109,6 +127,38 @@ class _CertificatePageState extends State<CertificatePage> {
                   onChanged: (_) => setState(() {}),
                 ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  controller: _eventNameController,
+                  decoration: const InputDecoration(
+                    labelText: "Enter event name",
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  controller: _dateController,
+                  decoration: InputDecoration(
+                    labelText: "Enter event date",
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () => _selectDate(context),
+                    ),
+                  ),
+                  onTap: () {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    _selectDate(context);
+                  },
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
               const SizedBox(height: 20),
               Screenshot(
                 controller: _screenshotController,
@@ -116,7 +166,6 @@ class _CertificatePageState extends State<CertificatePage> {
                   alignment: Alignment.center,
                   children: [
                     Image.asset(_templateAsset, width: 600),
-                    // Name
                     Positioned(
                       top: 179,
                       left: 0,
@@ -126,32 +175,37 @@ class _CertificatePageState extends State<CertificatePage> {
                           _nameController.text.isEmpty
                               ? "Your Name"
                               : _nameController.text,
+                          textAlign: TextAlign.center,
                           style: _getFontStyle(30, weight: FontWeight.bold),
                         ),
                       ),
                     ),
-                    // Event Name
                     Positioned(
                       top: 245,
                       left: 0,
                       right: 0,
                       child: Center(
                         child: Text(
-                          _eventName,
+                          _eventNameController.text.isEmpty
+                              ? "Event Name"
+                              : _eventNameController.text,
+                          textAlign: TextAlign.center,
                           style: _getFontStyle(20).copyWith(
                             color: const Color.fromARGB(255, 118, 11, 11),
                           ),
                         ),
                       ),
                     ),
-                    // Date
                     Positioned(
                       top: 290,
                       left: 0,
                       right: 0,
                       child: Center(
                         child: Text(
-                          _eventDate,
+                          _dateController.text.isEmpty
+                              ? "Event Date"
+                              : _dateController.text,
+                          textAlign: TextAlign.center,
                           style: _getFontStyle(15).copyWith(
                             color: const Color.fromARGB(255, 121, 13, 13),
                           ),
@@ -169,10 +223,9 @@ class _CertificatePageState extends State<CertificatePage> {
                   if (imageBytes != null) {
                     final blob = html.Blob([imageBytes]);
                     final url = html.Url.createObjectUrlFromBlob(blob);
-                    final anchor =
-                        html.AnchorElement(href: url)
-                          ..setAttribute("download", "certificate.png")
-                          ..click();
+                    html.AnchorElement(href: url)
+                      ..setAttribute("download", "certificate.png")
+                      ..click();
                     html.Url.revokeObjectUrl(url);
                   }
                 },
@@ -188,6 +241,8 @@ class _CertificatePageState extends State<CertificatePage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _eventNameController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 }
