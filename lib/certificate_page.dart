@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'dart:html' as html;
 
 enum CertificateType { achievement, completion, participation }
@@ -18,19 +19,16 @@ class _CertificatePageState extends State<CertificatePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _eventNameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   CertificateType _selectedType = CertificateType.achievement;
   DateTime? _selectedDateTime;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   void _updateEventDetailsForSelectedType(CertificateType type) {
     setState(() {
       _eventNameController.clear();
       _dateController.clear();
+      _emailController.clear();
       _selectedDateTime = null;
     });
   }
@@ -85,6 +83,36 @@ class _CertificatePageState extends State<CertificatePage> {
     }
   }
 
+  // Add this method for sending email properly
+  Future<void> sendEmail() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': 'Your Certificate',
+        'body': 'Hi, please find your certificate attached.',
+      },
+    );
+
+    try {
+      // For web: use window.open directly
+      html.window.open(emailLaunchUri.toString(), '_blank');
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error launching email: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,71 +123,114 @@ class _CertificatePageState extends State<CertificatePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DropdownButton<CertificateType>(
-                value: _selectedType,
-                items:
-                    CertificateType.values.map((type) {
-                      return DropdownMenuItem(
-                        value: type,
-                        child: Text(
-                          type.name[0].toUpperCase() + type.name.substring(1),
-                        ),
-                      );
-                    }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedType = value;
-                      _updateEventDetailsForSelectedType(value);
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: "Enter your name",
-                    border: OutlineInputBorder(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Select Template:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: _eventNameController,
-                  decoration: const InputDecoration(
-                    labelText: "Enter event name",
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: _dateController,
-                  decoration: InputDecoration(
-                    labelText: "Enter event date",
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () => _selectDate(context),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButton<CertificateType>(
+                      isExpanded: true,
+                      value: _selectedType,
+                      items:
+                          CertificateType.values.map((type) {
+                            return DropdownMenuItem(
+                              value: type,
+                              child: Text(
+                                type.name[0].toUpperCase() +
+                                    type.name.substring(1),
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedType = value;
+                            _updateEventDetailsForSelectedType(value);
+                          });
+                        }
+                      },
                     ),
                   ),
-                  onTap: () {
-                    FocusScope.of(context).requestFocus(FocusNode());
-                    _selectDate(context);
-                  },
-                  onChanged: (_) => setState(() {}),
-                ),
+                ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: "Enter your name",
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: _eventNameController,
+                            decoration: const InputDecoration(
+                              labelText: "Enter event name",
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: _dateController,
+                            decoration: InputDecoration(
+                              labelText: "Enter event date",
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.calendar_today),
+                                onPressed: () => _selectDate(context),
+                              ),
+                            ),
+                            onTap: () {
+                              FocusScope.of(context).requestFocus(FocusNode());
+                              _selectDate(context);
+                            },
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              labelText: "Enter email address",
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
               Screenshot(
                 controller: _screenshotController,
                 child: Stack(
@@ -215,7 +286,7 @@ class _CertificatePageState extends State<CertificatePage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () async {
                   final Uint8List? imageBytes =
@@ -231,6 +302,11 @@ class _CertificatePageState extends State<CertificatePage> {
                 },
                 child: const Text("Download as PNG"),
               ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: sendEmail, // <-- Changed here to call sendEmail()
+                child: const Text('Send Email'),
+              ),
             ],
           ),
         ),
@@ -243,6 +319,7 @@ class _CertificatePageState extends State<CertificatePage> {
     _nameController.dispose();
     _eventNameController.dispose();
     _dateController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 }
